@@ -1,6 +1,8 @@
 package com.advancedtelematic.campaigner
 
+import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.Http.ServerBinding
 import akka.http.scaladsl.server.{Directives, Route}
 import com.advancedtelematic.campaigner.client.{DeviceRegistryHttpClient, ResolverHttpClient, UserProfileHttpClient}
 import com.advancedtelematic.campaigner.http.Routes
@@ -8,11 +10,15 @@ import com.advancedtelematic.libats.http.LogDirectives._
 import com.advancedtelematic.libats.http.VersionDirectives._
 import com.advancedtelematic.libats.http.tracing.Tracing
 import com.advancedtelematic.libats.http.tracing.Tracing.ServerRequestTracing
-import com.advancedtelematic.libats.http.{BootApp, ServiceHttpClientSupport}
-import com.advancedtelematic.libats.slick.db.{CheckMigrations, DatabaseConfig}
+import com.advancedtelematic.libats.http.{BootApp, BootAppDatabaseConfig, BootAppDefaultConfig, ServiceHttpClientSupport}
+import com.advancedtelematic.libats.slick.db.{CheckMigrations, DatabaseSupport}
 import com.advancedtelematic.libats.slick.monitoring.DatabaseMetrics
 import com.advancedtelematic.metrics.{AkkaHttpRequestMetrics, MetricsSupport}
 import com.advancedtelematic.metrics.prometheus.PrometheusMetricsSupport
+import com.codahale.metrics.MetricRegistry
+import com.typesafe.config.Config
+import org.slf4j.LoggerFactory
+import scala.concurrent.Future
 
 trait Settings {
   import java.util.concurrent.TimeUnit
@@ -21,14 +27,14 @@ trait Settings {
 
   import scala.concurrent.duration._
 
-  private lazy val _config = ConfigFactory.load()
+  private lazy val _config = ConfigFactory.load().getConfig("ats.campaigner")
 
-  val host = _config.getString("server.host")
-  val port = _config.getInt("server.port")
+  val host = _config.getString("http.server.host")
+  val port = _config.getInt("http.server.port")
 
-  val deviceRegistryUri = _config.getString("deviceRegistry.uri")
-  val directorUri = _config.getString("director.uri")
-  val userProfileUri = _config.getString("userProfile.uri")
+  val deviceRegistryUri = _config.getString("http.client.deviceregistry.uri")
+  val directorUri = _config.getString("http.client.director.uri")
+  val userProfileUri = _config.getString("http.client.userprofile.uri")
 
   val schedulerPollingTimeout =
     FiniteDuration(_config.getDuration("scheduler.pollingTimeout").toNanos, TimeUnit.NANOSECONDS)
@@ -38,11 +44,14 @@ trait Settings {
     _config.getInt("scheduler.batchSize")
 }
 
-object Boot extends BootApp
+class CampaignerBoot(override val appConfig: Config,
+                     override val dbConfig: Config,
+                     override val metricRegistry: MetricRegistry)
+                    (implicit override val system: ActorSystem) extends BootApp
   with Directives
   with Settings
   with VersionInfo
-  with DatabaseConfig
+  with DatabaseSupport
   with MetricsSupport
   with DatabaseMetrics
   with CheckMigrations
@@ -50,23 +59,31 @@ object Boot extends BootApp
   with PrometheusMetricsSupport
   with ServiceHttpClientSupport {
 
-  implicit val _db = db
+  import system.dispatcher
 
-  log.info(s"Starting $version on http://$host:$port")
+  private lazy val log = LoggerFactory.getLogger(this.getClass)
 
-  def deviceRegistry(implicit tracing: ServerRequestTracing) = new DeviceRegistryHttpClient(deviceRegistryUri, defaultHttpClient)
-  def userProfile(implicit tracing: ServerRequestTracing) = new UserProfileHttpClient(userProfileUri, defaultHttpClient)
-  val resolver = new ResolverHttpClient(defaultHttpClient)
+  def bind(): Future[ServerBinding] = {
+    log.info(s"Starting ${nameVersion} on http://$host:$port")
 
-  val tracing = Tracing.fromConfig(config, projectName)
+    def deviceRegistry(implicit tracing: ServerRequestTracing) = new DeviceRegistryHttpClient(deviceRegistryUri, defaultHttpClient)
+    def userProfile(implicit tracing: ServerRequestTracing) = new UserProfileHttpClient(userProfileUri, defaultHttpClient)
+    val resolver = new ResolverHttpClient(defaultHttpClient)
 
-  val routes: Route =
-    (versionHeaders(version) & requestMetrics(metricRegistry) & logResponseMetrics(projectName)) {
-      prometheusMetricsRoutes ~
-        tracing.traceRequests { implicit serverRequestTracing =>
-          new Routes(deviceRegistry, resolver, userProfile).routes
-        }
-    }
+    val tracing = Tracing.fromConfig(appConfig, projectName)
 
-  Http().bindAndHandle(routes, host, port)
+    val routes: Route =
+      (versionHeaders(nameVersion) & requestMetrics(metricRegistry) & logResponseMetrics(projectName)) {
+        prometheusMetricsRoutes ~
+          tracing.traceRequests { implicit serverRequestTracing =>
+            new Routes(deviceRegistry, resolver, userProfile).routes
+          }
+      }
+
+    Http().bindAndHandle(routes, host, port)
+  }
+}
+
+object Boot extends BootApp with BootAppDefaultConfig with BootAppDatabaseConfig with VersionInfo {
+  new CampaignerBoot(appConfig, dbConfig, MetricsSupport.metricRegistry).bind()
 }

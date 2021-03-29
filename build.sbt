@@ -23,12 +23,12 @@ resolvers += "ATS Releases" at "https://nexus.ota.here.com/content/repositories/
 resolvers += "ATS Snapshots" at "https://nexus.ota.here.com/content/repositories/snapshots"
 
 libraryDependencies ++= {
-  val akkaV = "2.5.25"
-  val akkaHttpV = "10.1.10"
-  val libatsV = "0.3.0-109-ge12f057"
-  val libtufV = "0.7.1-6-gd36661d"
+  val akkaV = "2.6.5"
+  val akkaHttpV = "10.1.12"
+  val libatsV = "0.4.0-16-gf4110de-SNAPSHOT"
+  val libtufV = "0.7.1-23-g3ea21d4-SNAPSHOT"
+
   val scalaTestV = "3.0.8"
-  val slickV = "3.2.0"
 
   Seq(
     "ch.qos.logback" % "logback-classic" % "1.2.3",
@@ -38,8 +38,6 @@ libraryDependencies ++= {
     "com.typesafe.akka" %% "akka-slf4j" % akkaV,
     "com.typesafe.akka" %% "akka-stream" % akkaV,
     "com.typesafe.akka" %% "akka-stream-testkit" % akkaV % Test,
-    "com.typesafe.slick" %% "slick" % slickV,
-    "com.typesafe.slick" %% "slick-hikaricp" % slickV,
     "org.mariadb.jdbc" % "mariadb-java-client" % "2.4.4",
     "com.advancedtelematic" %% "libats" % libatsV,
     "com.advancedtelematic" %% "libats-http" % libatsV,
@@ -61,22 +59,14 @@ libraryDependencies ++= {
   )
 }
 
-sonarProperties ++= Map(
-  "sonar.projectName" -> "OTA Connect Campaigner",
-  "sonar.projectKey" -> "ota-connect-campaigner",
-  "sonar.host.url" -> "http://sonar.in.here.com",
-  "sonar.links.issue" -> "https://saeljira.it.here.com/projects/OTA/issues",
-  "sonar.links.scm" -> "https://main.gitlab.in.here.com/olp/edge/ota/connect/back-end/campaigner",
-  "sonar.links.ci" -> "https://main.gitlab.in.here.com/olp/edge/ota/connect/back-end/campaigner/pipelines",
-  "sonar.projectVersion" -> version.value,
-  "sonar.language" -> "scala")
-
-
-enablePlugins(BuildInfoPlugin)
+enablePlugins(BuildInfoPlugin, JavaAppPackaging)
 
 buildInfoOptions += BuildInfoOption.ToMap
-
 buildInfoOptions += BuildInfoOption.BuildTime
+buildInfoObject := "AppBuildInfo"
+buildInfoPackage := "com.advancedtelematic.campaigner"
+buildInfoUsePackageAsPath := true
+buildInfoOptions += BuildInfoOption.Traits("com.advancedtelematic.libats.boot.VersionInfoProvider")
 
 mainClass in Compile := Some("com.advancedtelematic.campaigner.Boot")
 
@@ -102,6 +92,4 @@ dockerCommands := Seq(
   Cmd("RUN", s"chown -R daemon:daemon /var/log/${moduleName.value}"),
   Cmd("USER", "daemon")
 )
-
-enablePlugins(JavaAppPackaging, GitVersioning)
 

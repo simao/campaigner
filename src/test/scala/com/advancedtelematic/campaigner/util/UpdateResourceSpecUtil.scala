@@ -6,7 +6,7 @@ import com.advancedtelematic.campaigner.data.DataType._
 import com.advancedtelematic.campaigner.data.Generators._
 import com.advancedtelematic.campaigner.db.{Campaigns, UpdateSupport}
 import com.advancedtelematic.libats.messaging_datatype.DataType.{DeviceId, UpdateId}
-import com.advancedtelematic.libats.test.DatabaseSpec
+import com.advancedtelematic.campaigner.DatabaseSpec
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import org.scalacheck.Arbitrary._
 import org.scalacheck.Gen

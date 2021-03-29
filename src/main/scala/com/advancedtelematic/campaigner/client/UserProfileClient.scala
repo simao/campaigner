@@ -37,12 +37,9 @@ class UserProfileHttpClient(uri: Uri, httpClient: HttpRequest => Future[HttpResp
     val path = uri.path / "api" / "v1" / "namespace_settings" / ns.get
     val request = HttpRequest(HttpMethods.GET, uri.withPath(path)).withNs(ns)
 
-    val errorHandler: PartialFunction[RemoteServiceError, Future[Option[Uri]]] = {
-      case e if e.status == StatusCodes.NotFound => FastFuture.successful(None)
+    execHttpUnmarshalled[UserProfileClient.NsSettings](request).map {
+      case Left(err) if err.status == StatusCodes.NotFound => None
+      case Right(s) => s.resolverUri
     }
-
-    execHttpUnmarshalled[UserProfileClient.NsSettings](request)
-      .map(_.map(_.resolverUri))
-      .handleErrors(errorHandler)
   }
 }

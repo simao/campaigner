@@ -7,6 +7,7 @@ import akka.http.scaladsl.model.{HttpRequest, Uri}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import cats.syntax.show._
+import com.advancedtelematic.campaigner.DatabaseSpec
 import com.advancedtelematic.campaigner.data.Codecs._
 import com.advancedtelematic.campaigner.data.DataType.CampaignStatus.CampaignStatus
 import com.advancedtelematic.campaigner.data.DataType.SortBy.SortBy
@@ -16,7 +17,6 @@ import com.advancedtelematic.libats.data.DataType.{Namespace, ResultCode}
 import com.advancedtelematic.libats.data.PaginationResult
 import com.advancedtelematic.libats.http.HttpOps._
 import com.advancedtelematic.libats.http.tracing.NullServerRequestTracing
-import com.advancedtelematic.libats.test.DatabaseSpec
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport._
 import io.circe.Json
 import org.scalatest.Suite

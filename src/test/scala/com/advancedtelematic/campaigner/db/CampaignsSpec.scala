@@ -6,7 +6,7 @@ import com.advancedtelematic.campaigner.data.Generators._
 import com.advancedtelematic.campaigner.util.{CampaignerSpecUtil, DatabaseUpdateSpecUtil}
 import com.advancedtelematic.libats.data.DataType.{ResultCode, ResultDescription}
 import com.advancedtelematic.libats.messaging_datatype.DataType.{DeviceId, UpdateId}
-import com.advancedtelematic.libats.test.DatabaseSpec
+import com.advancedtelematic.campaigner.DatabaseSpec
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.SpanSugar._

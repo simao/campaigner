@@ -47,7 +47,8 @@ class ResolverHttpClient(httpClient: HttpRequest => Future[HttpResponse])(implic
   }
 
   override def updatesForDevice(resolverUri: Uri, ns: Namespace, deviceId: DeviceId): Future[List[ExternalUpdate]] = {
-    val uri = resolverUri.withQuery(Uri.Query("device" -> deviceId.uuid.toString))
-    execHttpUnmarshalled[List[ExternalUpdate]](Get(uri).withNs(ns)).ok
+    val uri =
+      resolverUri.withQuery(Uri.Query("device" -> deviceId.uuid.toString))
+    execHttpUnmarshalledWithNamespace[List[ExternalUpdate]](ns, Get(uri)).ok
   }
 }
