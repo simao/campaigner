@@ -64,7 +64,7 @@ class CampaignerDaemon(override val appConfig: Config,
 
     val routes: Route = (versionHeaders(version) & logResponseMetrics(projectName)) {
       prometheusMetricsRoutes ~
-        DbHealthResource(versionMap).route
+        DbHealthResource(versionMap, metricRegistry = metricRegistry).route
     }
 
     Http().bindAndHandle(routes, host, port)

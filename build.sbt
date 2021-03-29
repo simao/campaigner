@@ -25,7 +25,7 @@ resolvers += "ATS Snapshots" at "https://nexus.ota.here.com/content/repositories
 libraryDependencies ++= {
   val akkaV = "2.6.5"
   val akkaHttpV = "10.1.12"
-  val libatsV = "0.4.0-16-gf4110de-SNAPSHOT"
+  val libatsV = "0.4.0-17-ga03bec5-SNAPSHOT"
   val libtufV = "0.7.1-23-g3ea21d4-SNAPSHOT"
 
   val scalaTestV = "3.0.8"

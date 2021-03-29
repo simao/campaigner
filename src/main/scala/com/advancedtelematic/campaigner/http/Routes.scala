@@ -8,11 +8,14 @@ import com.advancedtelematic.libats.data.DataType.Namespace
 import com.advancedtelematic.libats.http.DefaultRejectionHandler.rejectionHandler
 import com.advancedtelematic.libats.http.ErrorHandler
 import com.advancedtelematic.libats.slick.monitoring.DbHealthResource
+import com.advancedtelematic.metrics.MetricsSupport
+import com.codahale.metrics.MetricRegistry
 import slick.jdbc.MySQLProfile.api._
 
 import scala.concurrent.ExecutionContext
 
-class Routes(deviceRegistry: DeviceRegistryClient, resolver: ResolverClient, userProfile: UserProfileClient)
+class Routes(deviceRegistry: DeviceRegistryClient, resolver: ResolverClient, userProfile: UserProfileClient,
+             metricRegistry: MetricRegistry = MetricsSupport.metricRegistry)
             (implicit val db: Database, ec: ExecutionContext)
     extends VersionInfo {
 
@@ -30,7 +33,7 @@ class Routes(deviceRegistry: DeviceRegistryClient, resolver: ResolverClient, use
           new CampaignResource(extractAuth, deviceRegistry).route ~
           new DeviceResource(userProfile, resolver, defaultNamespaceExtractor).route ~
           new UpdateResource(defaultNamespaceExtractor, deviceRegistry, resolver, userProfile).route
-        } ~ DbHealthResource(versionMap).route
+        } ~ DbHealthResource(versionMap, metricRegistry = metricRegistry).route
       }
     }
 
