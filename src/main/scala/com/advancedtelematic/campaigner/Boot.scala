@@ -2,7 +2,11 @@ package com.advancedtelematic.campaigner
 
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.{Directives, Route}
+<<<<<<< HEAD
 import com.advancedtelematic.campaigner.client.{DeviceRegistryHttpClient, ResolverHttpClient, UserProfileHttpClient}
+=======
+import com.advancedtelematic.campaigner.client.{DeviceRegistryHttpClient, DirectorHttpClient, NoOpUserProfile, ResolverHttpClient, UserProfileHttpClient}
+>>>>>>> 8803b6e (wip)
 import com.advancedtelematic.campaigner.http.Routes
 import com.advancedtelematic.libats.http.LogDirectives._
 import com.advancedtelematic.libats.http.VersionDirectives._
@@ -36,6 +40,8 @@ trait Settings {
     FiniteDuration(_config.getDuration("scheduler.delay").toNanos, TimeUnit.NANOSECONDS)
   val schedulerBatchSize =
     _config.getInt("scheduler.batchSize")
+
+  val userProfileEnable = _config.getBoolean("userProfile.enable")
 }
 
 object Boot extends BootApp
@@ -55,7 +61,14 @@ object Boot extends BootApp
   log.info(s"Starting $version on http://$host:$port")
 
   def deviceRegistry(implicit tracing: ServerRequestTracing) = new DeviceRegistryHttpClient(deviceRegistryUri, defaultHttpClient)
-  def userProfile(implicit tracing: ServerRequestTracing) = new UserProfileHttpClient(userProfileUri, defaultHttpClient)
+
+  def director(implicit tracing: ServerRequestTracing) = new DirectorHttpClient(directorUri, defaultHttpClient)
+
+  def userProfile(implicit tracing: ServerRequestTracing) = if (userProfileEnable)
+    new UserProfileHttpClient(userProfileUri, defaultHttpClient)
+  else
+    new NoOpUserProfile
+
   val resolver = new ResolverHttpClient(defaultHttpClient)
 
   val tracing = Tracing.fromConfig(config, projectName)

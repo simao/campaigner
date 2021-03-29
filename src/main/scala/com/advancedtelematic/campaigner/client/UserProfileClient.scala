@@ -46,3 +46,7 @@ class UserProfileHttpClient(uri: Uri, httpClient: HttpRequest => Future[HttpResp
       .handleErrors(errorHandler)
   }
 }
+
+class NoOpUserProfile extends UserProfileClient {
+  override def externalResolverUri(ns: Namespace): Future[Option[Uri]] = FastFuture.successful(None)
+}
